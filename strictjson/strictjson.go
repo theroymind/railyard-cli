@@ -1,10 +1,11 @@
 // Package strictjson provides the strict JSON decoding every contract boundary uses: one value,
-// no unknown fields and nothing after it.
+// no unknown or duplicate fields, exact-case field names and nothing after it.
 package strictjson
 
 import (
 	"bytes"
-	"encoding/json"
+	"encoding/json/jsontext"
+	"encoding/json/v2"
 	"errors"
 	"io"
 )
@@ -15,15 +16,18 @@ var (
 )
 
 func Decode(reader io.Reader, target any) error {
-	decoder := json.NewDecoder(reader)
-	decoder.DisallowUnknownFields()
-	if err := decoder.Decode(target); err != nil {
-		if errors.Is(err, io.EOF) {
-			return ErrNoValue
-		}
+	decoder := jsontext.NewDecoder(reader)
+	value, err := decoder.ReadValue()
+	if errors.Is(err, io.EOF) {
+		return ErrNoValue
+	}
+	if err != nil {
 		return err
 	}
-	if _, err := decoder.Token(); !errors.Is(err, io.EOF) {
+	if err := json.Unmarshal(value, target, json.RejectUnknownMembers(true)); err != nil {
+		return err
+	}
+	if _, err := decoder.ReadToken(); !errors.Is(err, io.EOF) {
 		return ErrTrailingData
 	}
 	return nil

@@ -38,10 +38,23 @@ func TestUnmarshal(t *testing.T) {
 	}
 }
 
-func TestUnmarshalRejectsAnUnknownField(t *testing.T) {
-	var decoded target
+func TestUnmarshalRejectsLooseFields(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+	}{
+		{"An unknown field", `{"name":"a","extra":1}`},
+		{"A field name in another case", `{"Name":"a"}`},
+		{"A duplicate field", `{"name":"a","name":"b"}`},
+	}
 
-	if err := Unmarshal([]byte(`{"name":"a","extra":1}`), &decoded); err == nil {
-		t.Error("Unmarshal() error = nil, want an unknown field error")
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var decoded target
+
+			if err := Unmarshal([]byte(tt.input), &decoded); err == nil {
+				t.Errorf("Unmarshal(%q) error = nil, want an error", tt.input)
+			}
+		})
 	}
 }
