@@ -12,8 +12,13 @@ import (
 var ErrChildFailed = errors.New("child process failed")
 
 func RunChild(name string, arguments []string, stdin io.Reader) ([]byte, error) {
+	return RunChildIn("", name, arguments, stdin)
+}
+
+func RunChildIn(directory, name string, arguments []string, stdin io.Reader) ([]byte, error) {
 	var stdout bytes.Buffer
 	child := exec.Command(name, arguments...)
+	child.Dir = directory
 	child.Stdin = stdin
 	child.Stdout = &stdout
 	child.Stderr = os.Stderr
