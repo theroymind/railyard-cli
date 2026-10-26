@@ -1,5 +1,5 @@
 // Package cli provides the process plumbing every Railyard bin shares: argument parsing,
-// subcommand dispatch, usage errors, exit codes and JSON output.
+// subcommand dispatch, usage errors, exit codes and JSON in and out.
 package cli
 
 import (
@@ -9,7 +9,7 @@ import (
 	"strconv"
 )
 
-type Command func(arguments []string, stdout io.Writer) error
+type Command func(arguments []string, stdin io.Reader, stdout io.Writer) error
 
 type Program struct {
 	Name     string
@@ -17,15 +17,15 @@ type Program struct {
 	Commands map[string]Command
 }
 
-func (program Program) Run(arguments []string, stdout, stderr io.Writer) ExitCode {
-	message, exitCode := program.dispatch(arguments, stdout)
+func (program Program) Run(arguments []string, stdin io.Reader, stdout, stderr io.Writer) ExitCode {
+	message, exitCode := program.dispatch(arguments, stdin, stdout)
 	if message != "" {
 		_, _ = io.WriteString(stderr, message)
 	}
 	return exitCode
 }
 
-func (program Program) dispatch(arguments []string, stdout io.Writer) (string, ExitCode) {
+func (program Program) dispatch(arguments []string, stdin io.Reader, stdout io.Writer) (string, ExitCode) {
 	if len(arguments) == 0 {
 		return program.Usage, ExitCodeUsage
 	}
@@ -34,7 +34,7 @@ func (program Program) dispatch(arguments []string, stdout io.Writer) (string, E
 	if !exists {
 		return fmt.Sprintf("%s: unknown command %s\n\n%s", program.Name, strconv.Quote(commandName), program.Usage), ExitCodeUsage
 	}
-	err := command(commandArguments, stdout)
+	err := command(commandArguments, stdin, stdout)
 	if err == nil {
 		return "", ExitCodeSuccess
 	}
