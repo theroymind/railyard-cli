@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/theroymind/railyard/internal/contracts/strictjson"
+	"github.com/theroymind/railyard-cli/strictjson"
 )
 
 const jsonIndent = "  "
